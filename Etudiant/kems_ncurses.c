@@ -8,6 +8,8 @@
 #include <commun.h>
 #include <paquet.h>
 #include <ecran.h>
+#include <pthread.h>
+
 
 
 void arret( int sig )
@@ -15,238 +17,312 @@ void arret( int sig )
   /* printf( "Arret utilisateur\n");*/
 } 
 
+// Liste de toutes les variables communes entre les threads
+paquet_t * paquet = PAQUET_NULL ; 
+
+tapis_t * tapis_central = TAPIS_NULL ; 
+tapis_t ** tapis = NULL ; /* tableau des tapis */
+carte_id_t c = -1 ; 
+  
+err_t cr = OK ; 
+	
+booleen_t fini = FAUX;
+int NbJoueurs = 0;
+
+char message[256];
+ecran_t ecran = NULL;
+
+
+// Liste de tous les Mutex
+
+pthread_mutex_t mutex_Tapis = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_Fin = PTHREAD_MUTEX_INITIALIZER;
+
+	
+pthread_mutex_t mutex_Carte1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_Carte2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_Carte3 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_Carte4 = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_t mutex_TapisGlobal = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_CompteurJoueur = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_t mutex_Ecran = PTHREAD_MUTEX_INITIALIZER;
+
+
+
+//Fonction permettant de faire fonctionner les joueurs
+void Joueur(void* arg){
+
+	carte_id_t ind_carte = -1 ;
+  carte_id_t ind_carte_central = -1 ;
+	booleen_t echange = FAUX;
+
+  int compteur =*((int*)para);
+
+
+//On créé un décallage dans le lancement des threads
+	while(!fini)
+	{
+
+		/* Test arret */
+		if( tapis_carre( tapis[num_joueur] ) )
+		{
+				
+			pthread_mutex_lock(&mutex_Fin);
+			fini = VRAI ;
+			pthread_mutex_unlock(&mutex_Fin);
+
+			sprintf(mess, "Le joueur %2d à remporté la partie", compteur);
+			pthread_mutex_lock(&mutex_Ecran);
+			ecran_message_pause_afficher(ecran, mess);
+			pthread_mutex_unlock(&mutex_Ecran);
+			pthread_exit(0) ; 
+
+
+		}
+		
+		//On compte le nombre de joueurs en train de jouer
+		//Si un seul joueur joue, on bloque le tapis pour lui
+		pthread_mutex_lock(&mutex_CompteurJoueur);
+		NbJoueurs++;
+		if(NbJoueurs == 1)
+		{
+			pthread_mutex_lock(&mutex_Tapis);
+		}
+		
+		pthread_mutex_unlock(&mutex_CompteurJoueur);
+
+		//On choisit la carte a remplacer
+		if( ( cr = tapis_cartes_choisir( &echange , tapis[num_joueur] , &ind_carte , tapis_central , &ind_carte_central) ) )
+		{
+			sprintf(mess, "Pb dans choix des cartes, code retour = %d\n", cr ) ;
+			pthread_mutex_lock(&mutex_Ecran);
+			ecran_message_pause_afficher(ecran, mess);
+			pthread_mutex_unlock(&mutex_Ecran);
+			erreur_afficher(cr) ; 
+			pthread_exit(0) ; 
+		}
+
+
+		//Echange de carte si mouvement valable
+		if( echange ) 
+		{
+
+			pthread_mutex_lock(&mutex_Tapis);
+			if( ( cr = tapis_cartes_echanger( tapis[num_joueur] , ind_carte , tapis_central , ind_carte_central ) ) )
+			{
+				sprintf( mess, "Pb d'echange de cartes entre la carte %ld du tapis du joueur %d\n" , ind_carte , num_joueur ); 
+				pthread_mutex_lock(&mutex_Ecran);
+      			ecran_message_pause_afficher(ecran, mess);
+				pthread_mutex_unlock(&mutex_Ecran);
+				erreur_afficher(cr) ; 
+				pthread_exit(0) ; 
+			}
+			sprintf(mess, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", i, ind_carte, ind_carte_central);
+			pthread_mutex_lock(&mutex_Ecran);
+      		ecran_message_pause_afficher(ecran, mess);
+			ecran_carte_echanger(ecran, f_tapis_f_carte_lire(ecran_tapis_central_lire(ecran), ind_carte_central), f_tapis_f_carte_lire(ecran_tapis_joueur_lire(ecran, i), ind_carte);
+			ecran_afficher(ecran, tapis_central, tapis);
+			ecran_message_effacer(ecran);
+			pthread_mutex_unlock(&mutex_Ecran);
+
+		}
+		
+		//On compte le nombre de joueurs en train de jouer
+		//Si il n'y a plus de joueur qui joue alors on delocke le tapis
+		pthread_mutex_lock(&mutex_CompteurJoueur);
+		NbJoueurs--;
+		if(NbJoueurs == 0)
+		{
+			pthread_mutex_unlock(&mutex_Tapis);
+		}
+		
+		pthread_mutex_unlock(&mutex_CompteurJoueur);
+	}
+}
+
+//Fonction permettant de faire fonctionner les joueurs
+void Tapis()
+{
+
+	while(!fini)
+	{		
+	  	/* 
+	   	 * Pas un seul echange des joueur 
+	   	 * --> redistribution du tapis central 
+	   	 */
+
+    pthread_mutex_lock(&mutex_Ecran);
+		pthread_mutex_lock(&mutex_Tapis);
+
+      ecran_message_pause_afficher(ecran, "Pas d'échange = Redistribution du tapis central");
+
+	  	for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
+	    {
+	      	if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
+			    {
+				  ecran_message_pause_afficher(ecran, "Problème de retrait de carte sur le tapis central");
+		  		  erreur_afficher(cr) ; 
+		  		  exit(-1) ; 
+			    }
+	  
+	    	if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
+			  {
+				  ecran_message_pause_afficher(ecran, "Problème de distribution de carte sur le tapis central");
+				  erreur_afficher(cr) ; 
+				  exit(-1) ; 
+			  }
+	    }
+
+    ecran_afficher(ecran, tapis_central, tapis);
+	ecran_message_effacer(ecran);
+
+		pthread_mutex_unlock(&mutex_Tapis);
+    pthread_mutex_unlock(&mutex_Ecran);
+      
+	}
+}
+
+
 int
 main( int argc , char * argv[] ) 
 {
-  err_t cr = OK ; 
 
-  paquet_t * paquet = PAQUET_NULL ; 
-  tapis_t * tapis_central = TAPIS_NULL ; /* tapis central */
-  tapis_t ** tapis = NULL ; /* tapis des joueurs */
+	int i;
 
-  tapis_id_t t = 0 ; /* Compteur de tapis */
-  carte_id_t c = 0 ; /* Compteur de cartes */
 
-  ecran_t * ecran = NULL ; 
-  
-  char mess[256] ; 
-  booleen_t fini = FAUX ; 
-  booleen_t echange = FAUX ; 
-  int i = 0 ; 
+	printf("\n\n\n\t===========Debut %s==========\n\n" , argv[0] );
 
-  carte_id_t ind_carte ; 
-  carte_id_t ind_carte_central ; 
+	if( argc != 2 ) 
+   	{
+    	printf( " Programme de test des joueurs de Kems\n" );
+     	printf( " usage : %s <Nb joueurs>\n" , argv[0] );
+     	exit(0); 
+   	}
 
-  signal( SIGINT, arret ) ; 
+  	NbJoueurs  = atoi( argv[1] ) ;
 
-  printf("\n\n\n\t===========Debut %s==========\n\n" , argv[0] );
+  	srandom(getpid());
 
-  if( argc != 2 ) 
+  	printf("Creation du paquet de cartes\n") ;
+  	if( ( paquet = paquet_creer() ) == PAQUET_NULL )
     {
-      printf( " Programme de test sur l'affichage de <nb joueurs> tapis avec ncurses\n" );
-      printf( " usage : %s <nb joueurs>\n" , argv[0] );
-      exit(0); 
+    	printf("Erreur sur creation du paquet\n" ) ;
+      	exit(-1) ; 
     }
 
-  int NbJoueurs = atoi(argv[1]) ;
- 
-  /* Creation du paquet */
-  printf("Creation du paquet..." ) ; fflush(stdout) ; 
-  paquet = paquet_creer() ; 
-  printf( "OK\n"); 
-
-  /* Creation tapis central */
-  printf("Creation du tapis central...")  ; fflush(stdout) ; 
-  if( ( tapis_central = tapis_creer() ) == TAPIS_NULL )
+  	printf("Creation du tapis central\n")  ;
+  	if( ( tapis_central = tapis_creer() ) == TAPIS_NULL )
     {
-      printf("Erreur sur creation du tapis central\n" ) ;
-      exit(-1) ;
+      	printf("Erreur sur creation du tapis central\n" ) ;
+      	exit(-1) ;
     }
 
-  for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
+  	for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
     {
-      if( ( cr = tapis_carte_distribuer( tapis_central  , c , paquet ) ) )
-	{
-	  erreur_afficher(cr) ; 
-	  exit(-1) ; 
-	}
+     	if( ( cr = tapis_carte_distribuer( tapis_central  , c , paquet ) ) )
+		{
+			erreur_afficher(cr) ; 
+	  		exit(-1) ; 
+		}
     }
-  printf("OK\n"); 
 
-  /* Creation des tapis des joueurs */
-  printf("Creations des %d tapis..." , NbJoueurs ) ; fflush(stdout) ; 
+  	printf( "Tapis Central\n" ) ;
+  	tapis_stdout_afficher( tapis_central ) ;
+  	printf("\n");
 
-  if( ( tapis = malloc( sizeof(tapis_t *) * NbJoueurs ) ) == NULL )
+  	printf("Creation des %d tapis des joueurs\n" , NbJoueurs ) ;
+  	if( ( tapis = malloc( sizeof(tapis_t *) * NbJoueurs ) ) == NULL )
     {
-      printf(" Erreur allocation memoire tableau des tapis (%lu octets demandes)\n" , 
+      	printf(" Erreur allocation memoire tableau des tapis (%lu octets demandes)\n" , 
 	     (long unsigned int)(sizeof(tapis_t *) * NbJoueurs) ) ;
-      exit(-1) ; 
+      	exit(-1) ; 
     }
-
-  for( t=0 ; t<NbJoueurs ; t++ ) 
+	
+  	for( i=0 ; i<NbJoueurs ; i++ ) 
     {
-
-      if( ( tapis[t] = tapis_creer() ) == TAPIS_NULL )
-	{
-	  printf("Erreur sur creation du tapis %ld\n" , t ) ;
-	  exit(-1) ;
-	}
-
-      for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
-	{
-	  if( ( cr = tapis_carte_distribuer( tapis[t]  , c , paquet ) ) )
-	    {
-	      if( cr == ERR_PAQUET_VIDE ) printf("Pas assez de cartes pour tous les joueurs\n"); 
-	      erreur_afficher(cr) ; 
-	      exit(-1) ; 
-	    }
-	}
-    }
-  printf( "OK\n") ; 
-
-  /*
-   * Creation et affichage de l'ecran  
-   */
-
-  if( ( ecran = ecran_creer( tapis_central , 
-			     tapis , 
-			     NbJoueurs ) ) == NULL ) 
-    {
-      printf("Erreur sur la creation de l'ecran\n"); 
-      exit(-1) ;
-    }
-
-  ecran_message_afficher( ecran , "Debut de partie: ^C pour commencer");
-  pause() ; 
-
-  /* Phase de jeu */
-  fini = FAUX ; 
-  while( ! fini ) 
-    {
-      echange=FAUX ; 
-
-      for( i=0 ; i<NbJoueurs ; i++ ) /* boucle des joueurs */
-	{
-
-	  /* Test arret */
-	  if( tapis_carre( tapis[i] ) )
-	    {
-	      
-	      fini = VRAI ;
-	      sprintf( mess ,  "Le joueur %2d a gagne" , i ) ; 
-	      ecran_message_pause_afficher( ecran , mess ) ; 
-	      goto fin ;
-	    }
-
-	  if( ( cr = tapis_cartes_choisir( &echange , tapis[i] , &ind_carte , tapis_central , &ind_carte_central) ) )
-	    {
-	      sprintf( mess , "Pb dans choix des cartes, code retour = %d\n", cr ) ;
-	      ecran_message_pause_afficher( ecran , mess ) ; 
-	      erreur_afficher(cr) ; 
-	      goto fin ;
-	    }
-
-	  if( echange ) 
-	    {
-	      if( ( cr = tapis_cartes_echanger( tapis[i] , ind_carte , tapis_central , ind_carte_central ) ) )
+      	if( ( tapis[i] = tapis_creer() ) == TAPIS_NULL )
 		{
-		  sprintf( mess, "Pb d'echange de cartes entre la carte %ld du tapis du joueur %d et la carte %ld du tapis central" , 
-			   ind_carte , i , ind_carte_central ); 
-		  ecran_message_pause_afficher( ecran , mess ) ; 
-		  erreur_afficher(cr) ; 
-		  goto fin ; 
-		}	     	 
-	      sprintf( mess , "Joueur %i: Echange carte %ld avec carte %ld du tapis central " , 
-		       i , ind_carte , ind_carte_central ) ;
-	      ecran_message_pause_afficher( ecran , mess ) ; 
-	      ecran_cartes_echanger( ecran , 
-				     f_tapis_f_carte_lire( ecran_tapis_central_lire( ecran ) , ind_carte_central ) ,
-				     f_tapis_f_carte_lire( ecran_tapis_joueur_lire( ecran , i ) , ind_carte ) ) ;
-	      ecran_afficher( ecran , tapis_central , tapis ) ; 
-	      ecran_message_effacer( ecran ) ;
-	    }
-	}
-
-      if( ! echange ) 
-	{
-	  /* 
-	   * Pas un seul echange des joueur 
-	   * --> redistribution du tapis central 
-	   */
-	  ecran_message_pause_afficher( ecran , "Pas d'echange --> Redistribution tapis central") ; 
-	  for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
-	    {
-	      if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
-		{
-		  ecran_message_pause_afficher(ecran , "Pb dans retrait d'une carte du tapis central" ); 
-		  erreur_afficher(cr) ; 
-		  goto fin ; 
+	  		printf("Erreur sur creation du tapis %d\n" , i ) ;
+	  		exit(-1) ;
 		}
-	  
-	      if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
+
+      	for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
 		{
-		  ecran_message_pause_afficher( ecran , "Pb dans distribution d'une carte pour le tapis central" ); 
-		  erreur_afficher(cr) ; 
-		  goto fin ; 
+	  		if( ( cr = tapis_carte_distribuer( tapis[i]  , c , paquet ) ) )
+	    	{
+	      		if( cr == ERR_PAQUET_VIDE ) printf("Pas assez de cartes pour tous les joueurs\n"); 
+	      			erreur_afficher(cr) ; 
+	      			exit(-1) ; 
+	    	}
 		}
-	    }
-	  ecran_afficher( ecran  , tapis_central , tapis ) ;
-	  ecran_message_effacer(ecran) ; 
-	}
 
-    }
+      	printf( "Tapis joueur %d\n" , i+1 ) ;
+      	tapis_stdout_afficher( tapis[i] ) ;
+      	printf("\n");
+    }	
 
-  /* Fin du jeu */
-
- fin : 
-  pause() ; 
-
-  /* Destruction de l'ecran */
-  if( ( cr = ecran_detruire( &ecran ) ) )
-    {
-      fprintf( stderr , "Erreur lors de la destruction de l'ecran, cr = %d\n" , cr ) ;
-      exit(-1) ; 
-    }
-    
-
-  /* Destructions du tapis central */
-  printf( "Destructions du tapis central...") ; fflush(stdout) ; 
-  if( ( cr = tapis_detruire( &tapis_central ) ) )
-    {
-      fprintf( stderr , " Erreur sur destruction du tapis central\n") ;
-      erreur_afficher(cr) ; 
-      exit(-1) ; 
-    }
-  printf("OK\n"); 
+  	//Creation de l'écran
+	ecran = ecran_creer(tapis_central, tapis, NbJoueurs);
+	ecran_message_afficher(ecran, "Début de partie");
   
-  /* Destructions des tapis des joueurs */
-  printf( "Destructions des tapis des joueurs...") ; fflush(stdout) ; 
-  for( t=0 ; t<NbJoueurs ; t++ )  
-    {
 
-      if( ( cr = tapis_detruire( &tapis[t] ) ) )
-       {
-	 fprintf( stderr , " Erreur sur destruction du tapis %ld\n"  , t ) ;
-	 erreur_afficher(cr) ; 
-	 exit(-1) ; 
-       }
 
-    }
-  free( tapis ) ;
-  printf("OK\n"); 
+	//On créé les threads du tapis général et des joueurs
+	pthread_t joueurs[NbJoueurs+1];
 
-  /*  Destruction du paquet */
-  printf("\nDestruction du paquet..." ) ; fflush(stdout) ; 
-  if( ( cr = paquet_detruire( &paquet ) ) )
-    {
-	 fprintf( stderr , " Erreur sur destruction du paquet\n" ) ;
-	 erreur_afficher(cr) ; 
-	 exit(-1) ; 
-    }
-  printf("OK\n") ; 
+	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
+
+	for(i = 0; i<NbJoueurs; i++){ 
+		pthread_create(&joueurs[i], NULL, (void *)Joueur, i);
+	}
+
+	//On attend la fin de l'exécution de tous les threads
+	for(i = 0; i<NbJoueurs+1; i++){ 
+		pthread_join(joueurs[i], NULL);
+	}
+	
+
+
+
+	//Destruction de l'écran
+	ecran_detruire(&ecran);
+
+ 	printf("\nDestruction des tapis..." ) ; fflush(stdout) ; 
+ 	for (i=0 ; i<NbJoueurs ; i++ ) 
+   	{
+     	if( ( cr = tapis_detruire( &tapis[i] ) ) )
+       	{
+	 		printf(" Erreur sur destruction du tapis du joueur %d\n"  , i ) ;
+	 		erreur_afficher(cr) ; 
+	 		exit(-1) ; 
+       	}
+   	}
+	printf("OK\n") ; 
  
-  printf("\n\n\t===========Fin %s==========\n\n" , argv[0] );
 
-  return(0) ;
+ 	printf("\nDestruction du paquet..." ) ; fflush(stdout) ; 
+ 	paquet_detruire( &paquet ) ;
+ 	printf("OK\n") ; 
+
+
+ 	printf("\nDestruction des mutex..." ) ; fflush(stdout) ; 
+	pthread_mutex_destroy(&mutex_Carte1);
+	pthread_mutex_destroy(&mutex_Carte2);
+	pthread_mutex_destroy(&mutex_Carte3);
+	pthread_mutex_destroy(&mutex_Carte4);
+	pthread_mutex_destroy(&mutex_Tapis);
+	pthread_mutex_destroy(&mutex_Fin);
+	pthread_mutex_destroy(&mutex_TapisGlobal);
+	pthread_mutex_destroy(&mutex_CompteurJoueur);
+	pthread_mutex_destroy(&mutex_Ecran);
+
+	printf("OK\n") ;
+
+ 
+ 	printf("\n\n\t===========Fin %s==========\n\n" , argv[0] );
+ 
+ 	return(0) ;
 }
 
