@@ -1,0 +1,6 @@
+#
+# Parents Directories
+#
+DirLib=../lib
+DirInc=../inc
+DirSrc=../src

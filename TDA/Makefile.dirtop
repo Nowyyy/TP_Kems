@@ -1,0 +1,6 @@
+#
+# Top Directories
+#
+DirLib=lib
+DirInc=inc
+DirSrc=src

@@ -1,0 +1,258 @@
+
+Commun/commun.h,137
+#define _COMMUN_H_2,19
+#define FICHIER_LG_NOM 27,502
+#define DIR_LG_NOM 28,531
+#define DIM_NULL 29,556
+#define STRING_LG_MAX 30,576
+
+Commun/erreur.c,28
+void erreur_afficher(7,102
+
+Commun/erreur.h,244
+#define _ERREUR_H_2,19
+#define ERR_CARTE_UNK	23,225
+#define ERR_CARTE_NULL	24,277
+#define ERR_TAPIS_UNK	32,396
+#define ERR_TAPIS_CARTE_ID	33,447
+#define ERR_PAQUET_UNK	41,589
+#define ERR_PAQUET_VIDE	42,642
+#define ERR_ERREUR_FIN	46,732
+
+Commun/test_erreur.c,11
+main(6,45
+
+Ecran/ecran.c,954
+WINDOW * ecran_aire_lire(14,178
+WINDOW * ecran_messages_lire(20,269
+ligne_id_t  ecran_hauteur_aire_lire(26,368
+ligne_id_t  ecran_largeur_aire_lire(32,472
+ligne_id_t  ecran_y_messages_lire(38,576
+ecran_t * ecran_creer(48,719
+err_t ecran_detruire(161,4060
+void ecran_message_afficher(197,4754
+void ecran_message_pause_afficher(218,5256
+void ecran_message_effacer(228,5452
+void ecran_case_libre_afficher(244,5734
+void ecran_case_zone_libre_afficher(251,5850
+void ecran_case_unk_afficher(260,5996
+void ecran_bille_afficher(274,6149
+void ecran_case_afficher(289,6484
+err_t ecran_mvt_bille_afficher(320,7091
+err_t ecran_bille_desintegrer(373,8380
+err_t ecran_bille_deplacer(414,10276
+err_t ecran_cases_afficher(475,11956
+err_t ecran_afficher(540,13651
+booleen_t  ecran_existe(559,13948
+void ecran_stderr_afficher(574,14181
+void ecran_bille_temporiser(607,14984
+err_t ecran_bille_poser(625,15448
+err_t ecran_bille_positionner(670,16799
+
+Ecran/ecran.h,299
+#define _ECRAN_H_2,18
+#define ECRAN_NULL 29,517
+#define ECRAN_LG_MESS 35,609
+#define ECRAN_PAUSE_MESS 41,751
+#define ECRAN_ATTENTE_MAX 49,997
+#define ECRAN_ATTENTE_MIN 50,1031
+int Ecran_Nb_Ref 61,1204
+typedef unsigned int ligne_id_t 71,1318
+typedef struct ecran_s77,1441
+} ecran_t 84,1759
+
+Ecran/test_ecran_bille.c,54
+booleen_t fini 8,100
+void arret(11,133
+main(31,351
+
+Ecran/test_ecran_billes.c,54
+booleen_t fini 8,100
+void arret(11,133
+main(31,349
+
+Enseignant/lancer_billes.c,135
+aire_t * Aire 16,202
+ecran_t * Ecran 17,218
+pthread_mutex_t Mutex_Ecran 18,237
+void arret(24,333
+void bille(47,603
+main(181,5045
+
+Jeu/carte.c,692
+couleur_t carte_couleur_lire(15,174
+numero_t carte_numero_lire(22,303
+booleen_t carte_existe(32,413
+err_t carte_couleur_ecrire(46,620
+err_t carte_numero_ecrire(57,850
+err_t carte_copier(67,1085
+err_t cb_carte_copier(90,1480
+err_t carte_referencer(97,1610
+err_t cb_carte_referencer(113,1822
+carte_t * carte_creer(122,1991
+err_t carte_detruire(146,2447
+err_t cb_carte_detruire(157,2586
+err_t carte_reference_effacer(167,2730
+err_t cb_carte_reference_effacer(177,2851
+void carte_couleur_afficher(188,3013
+void carte_numero_afficher(203,3363
+void carte_stdout_afficher(221,3868
+void cb_carte_stdout_afficher(237,4119
+int carte_comparer(248,4275
+int cb_carte_comparer(260,4503
+
+Jeu/carte.h,1311
+#define _CARTE_H_2,18
+#define CARTE_NULL 20,226
+typedef enum couleur_s 31,328
+typedef enum couleur_s { TREFLE 31,328
+typedef enum couleur_s { TREFLE , PIQUE 31,328
+typedef enum couleur_s { TREFLE , PIQUE , CARREAU 31,328
+typedef enum couleur_s { TREFLE , PIQUE , CARREAU , COEUR 31,328
+typedef enum couleur_s { TREFLE , PIQUE , CARREAU , COEUR } couleur_t 31,328
+#define CARTE_PREMIERE_COULEUR 32,400
+#define CARTE_DERNIERE_COULEUR 33,438
+typedef enum numero_s 39,532
+typedef enum numero_s { SEPT=39,532
+typedef enum numero_s { SEPT=7 , HUIT=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=10 , VALET=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=10 , VALET=11 , DAME=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=10 , VALET=11 , DAME=12 , ROI=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=10 , VALET=11 , DAME=12 , ROI=13 , AS=39,532
+typedef enum numero_s { SEPT=7 , HUIT=8 , NEUF=9 , DIX=10 , VALET=11 , DAME=12 , ROI=13 , AS=14 } numero_t 39,532
+#define CARTE_PREMIER_NUMERO 40,641
+#define CARTE_DERNIER_NUMERO 41,675
+typedef struct carte_s 47,782
+} carte_t 51,907
+typedef unsigned int carte_id_t 57,1024
+
+Jeu/paquet.c,512
+carte_t * paquet_carte_lire(13,132
+carte_id_t paquet_nb_cartes(21,331
+booleen_t paquet_existe(31,460
+booleen_t paquet_vide(37,565
+err_t paquet_carte_ajouter(56,850
+carte_t * paquet_carte_retirer(66,1056
+err_t paquet_copier(77,1315
+err_t cb_paquet_copier(83,1473
+paquet_t * paquet_creer(92,1679
+err_t paquet_detruire(129,2497
+err_t cb_paquet_detruire(135,2591
+void paquet_stdout_afficher(146,2738
+void cb_paquet_stdout_afficher(162,3132
+int paquet_comparer(173,3294
+int cb_paquet_comparer(208,4150
+
+Jeu/paquet.h,120
+#define _PAQUET_H_2,19
+#define PAQUET_NULL 19,210
+typedef tab_t paquet_t 30,311
+typedef tab_id_t paquet_id_t 36,442
+
+Jeu/tapis.c,651
+carte_t * tapis_carte_lire(13,130
+carte_id_t tapis_nb_cartes(21,318
+booleen_t tapis_existe(31,443
+booleen_t tapis_vide(37,544
+booleen_t tapis_carre(44,708
+err_t tapis_carte_poser(75,1307
+err_t tapis_carte_distribuer(91,1624
+err_t tapis_carte_retirer(113,2114
+err_t tapis_copier(139,2787
+err_t cb_tapis_copier(145,2938
+tapis_t * tapis_creer(154,3135
+err_t tapis_detruire(174,3461
+err_t cb_tapis_detruire(180,3551
+void tapis_stdout_afficher(191,3693
+void cb_tapis_stdout_afficher(206,4036
+int tapis_comparer(217,4191
+int cb_tapis_comparer(252,5026
+err_t tapis_carte_choisir(264,5313
+  typedef struct occ_s269,5425
+  } occ_t 273,5490
+
+Jeu/tapis.h,148
+#define _TAPIS_H_2,18
+#define TAPIS_NULL 20,224
+typedef tab_t tapis_t 31,342
+#define TAPIS_NB_CARTES 37,440
+typedef tab_id_t tapis_id_t 45,572
+
+Jeu/test_carte.c,37
+#define NB_CARTES 7,80
+main(11,107
+
+Jeu/test_paquet.c,36
+#define NB_CARTES 6,80
+main(9,106
+
+Jeu/test_tapis.c,12
+main(9,104
+
+TDA/liste.h,23
+#define _LISTE_H_2,18
+
+TDA/liste_erreurs.h,198
+#define _ERREUR_LISTE_H_2,25
+#define ERR_LISTE_MAX_LISTE	24,275
+#define ERR_LISTE_IND_ELEM	25,340
+#define ERR_LISTE_SEEK_ELEM	26,419
+#define ERR_LISTE_END	27,510
+#define ERR_LISTE_NULL	28,591
+
+TDA/liste_sdd.h,150
+#define _LISTE_SDD_H_2,22
+#define LISTE_NULL 22,616
+#define LISTE_ID_NULL 28,727
+typedef tab_id_t liste_id_t 35,826
+typedef tab_t liste_t 44,974
+
+TDA/standard.h,321
+#define _STANDARD_H_2,21
+typedef enum booleen_s 19,234
+typedef enum booleen_s { FAUX 19,234
+typedef enum booleen_s { FAUX , VRAI 19,234
+typedef enum booleen_s { FAUX , VRAI } booleen_t 19,234
+typedef int index_t 25,341
+#define LG_MAX_NOM_FICHIER 36,623
+#define LG_MAX_NOM_DIR 37,656
+#define LG_MAX_STRING 38,685
+
+TDA/standard_erreurs.h,291
+#define _ERREURS_STANDARD_H_2,29
+typedef int err_t 16,216
+#define OK 27,322
+#define ERR_DEB_MEMOIRE	34,386
+#define ERR_EFF_MEMOIRE	35,443
+#define ERR_NOM_FICHIER	36,525
+#define ERR_PARAM_VIDE	37,590
+#define ERR_SAISIE	38,659
+#define FIN_SAISIE	39,739
+#define ERR_ERREUR_UNK	40,814
+
+TDA/tab.h,21
+#define _TAB_H_2,16
+
+TDA/tab_erreurs.h,184
+#define _ERREUR_TAB_H_2,23
+#define ERR_TAB_MAX_TAB	22,242
+#define ERR_TAB_IND_ELEM	23,307
+#define ERR_TAB_SEEK_ELEM	24,385
+#define ERR_TAB_END	25,475
+#define ERR_TAB_NULL	26,556
+
+TDA/tab_sdd.h,157
+#define _TAB_SDD_H_2,20
+#define TAB_NULL 20,593
+#define TAB_ID_NULL 26,698
+typedef long int tab_id_t 33,794
+typedef struct tab_s42,939
+} tab_t 49,1366
+
+TDA/tda.h,21
+#define _TDA_H_2,16
+
+TDA/tda_erreurs.h,29
+#define _TDA_ERREURS_H_2,24

@@ -1,0 +1,15 @@
+#
+# Directories
+#
+
+DirCommun=./Commun
+DirJeu=./Jeu
+DirEcran=./Ecran
+
+DirEtu=./Etudiant
+
+DirTDA=TDA
+
+DirLibTDA=$(DirTDA)/lib
+DirIncTDA=$(DirTDA)/inc
+DirSrcTDA=$(DirTDA)/src
