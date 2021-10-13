@@ -128,6 +128,8 @@ void Joueur(void* arg){
 			pthread_mutex_unlock(&mutex_Ecran);
 
 		}
+		pthread_mutex_unlock(&mutex_Tapis);
+
 		
 		//On compte le nombre de joueurs en train de jouer
 		//Si il n'y a plus de joueur qui joue alors on delocke le tapis
@@ -275,7 +277,7 @@ main( int argc , char * argv[] )
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
 	for(i = 0; i<NbJoueurs; i++){ 
-		pthread_create(&joueurs[i], NULL, (void *)Joueur, i);
+		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)i);
 	}
 
 	//On attend la fin de l'exécution de tous les threads
@@ -299,6 +301,7 @@ main( int argc , char * argv[] )
 	 		exit(-1) ; 
        	}
    	}
+	free(tapis);
 	printf("OK\n") ; 
  
 
