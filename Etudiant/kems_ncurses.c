@@ -63,26 +63,26 @@ pthread_mutex_t mutex_Signaux = PTHREAD_MUTEX_INITIALIZER;
 void Joueur(void* arg){
 
 	carte_id_t ind_carte = -1 ;
-  carte_id_t ind_carte_central = -1 ;
+  	carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
 
   equipe_s info = *((equipe_s*)arg);
-  int signal_lancé = 0;
+  int signal_lance = 0;
 
-
+	
 //On créé un décallage dans le lancement des threads
 	while(!fini)
 	{
 
-		pthread_mutex_lock(&mutex_Signaux);
-		if(signaux[info.num_equipe] == 1 && signal_lancé == 0){
-			pthread_mutex_unlock(&mutex_Signaux);
+		//pthread_mutex_lock(&mutex_Signaux);
+		if(signaux[info.num_equipe] == 1 && signal_lance == 0){
+			//pthread_mutex_unlock(&mutex_Signaux);
 			
 			pthread_mutex_lock(&mutex_Fin);
 			fini = VRAI ;
 			pthread_mutex_unlock(&mutex_Fin);
 
-			sprintf(message, "%2D crie KEMS ! L'equipe %2d à remporté la partie", info.num_joueur+1, info.num_equipe+1);
+			sprintf(message, "Le joueur %2d crie KEMS ! L'equipe %2d à remporté la partie", info.num_joueur+1, info.num_equipe+1);
 			pthread_mutex_lock(&mutex_Ecran);
 			ecran_message_pause_afficher(ecran, message);
 			pthread_mutex_unlock(&mutex_Ecran);
@@ -96,7 +96,7 @@ void Joueur(void* arg){
 			pthread_mutex_lock(&mutex_Signaux);
 			signaux[info.num_equipe]=1;	
 			pthread_mutex_unlock(&mutex_Signaux);
-			signal_lancé =1;
+			signal_lance =1;
 
 		}
 		
@@ -303,27 +303,31 @@ main( int argc , char * argv[] )
 	signaux[1]=0;
 	signaux[2]=0;
 
-	int id[]={0,1,2,3,4,5,6};
 	pthread_t joueurs[NbJoueurs+1];
 
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
 	for(i = 0; i<NbJoueurs; i++){ 
-		equipe_s equipe;
-		equipe.num_joueur = id[i];
-		if(i == 0 || i == 1){
-			equipe.num_equipe = 0; 
+		equipe_s equipes[6];
+		equipes[0].num_joueur = 0;
+		equipes[0].num_equipe = 0;
 
-		}
-		if(i == 2 || i == 3){
-			equipe.num_equipe = 1; 
+		equipes[1].num_joueur = 1;
+		equipes[1].num_equipe = 0;
 
-		}
-		if(i == 4 || i == 5){
-			equipe.num_equipe = 2; 
+		equipes[2].num_joueur = 2;
+		equipes[2].num_equipe = 1;
 
-		}
-		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&equipe);
+		equipes[3].num_joueur = 3;
+		equipes[3].num_equipe = 1;
+
+		equipes[4].num_joueur = 4;
+		equipes[4].num_equipe = 2;
+
+		equipes[5].num_joueur = 5;
+		equipes[5].num_equipe = 2;
+	
+		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&equipes[i]);
 	}
 
 	//On attend la fin de l'exécution de tous les threads
@@ -366,6 +370,8 @@ main( int argc , char * argv[] )
 	pthread_mutex_destroy(&mutex_TapisGlobal);
 	pthread_mutex_destroy(&mutex_CompteurJoueur);
 	pthread_mutex_destroy(&mutex_Ecran);
+	pthread_mutex_destroy(&mutex_Signaux);
+
 
 	printf("OK\n") ;
 
