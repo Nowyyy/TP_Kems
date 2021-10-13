@@ -11,10 +11,6 @@
 #include <pthread.h>
 
 
-typedef struct equipe_t{
-	int num_joueur;
-	int num_equipier;
-}equipe_s;
 
 void arret( int sig )
 {
@@ -207,15 +203,7 @@ main( int argc , char * argv[] )
      	exit(0); 
    	}
 
-	NbJoueurs  = atoi( argv[1] ) ;
-
-	if(NbJoueurs != 4 && NbJoueurs != 6 ){
-		printf("Il ne peut y avoir que 4 ou 6 joueurs\n");
-		printf("\n");
-		exit(0);
-	}
-
-  	
+  	NbJoueurs  = atoi( argv[1] ) ;
 
   	srandom(getpid());
 
@@ -290,8 +278,7 @@ main( int argc , char * argv[] )
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
 	for(i = 0; i<NbJoueurs; i++){ 
-		equipe_s equipe = {id[i], }; 
-		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&equipe);
+		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&id[i]);
 	}
 
 	//On attend la fin de l'exécution de tous les threads
