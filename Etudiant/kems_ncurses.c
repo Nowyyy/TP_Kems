@@ -30,7 +30,7 @@ booleen_t fini = FAUX;
 int NbJoueurs = 0;
 
 char message[256];
-ecran_t ecran = NULL;
+ecran_t * ecran = ECRAN_NULL;
 
 
 // Liste de tous les Mutex
@@ -58,7 +58,7 @@ void Joueur(void* arg){
   carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
 
-  int compteur =*((int*)para);
+  int num_joueur =*((int*)arg);
 
 
 //On créé un décallage dans le lancement des threads
@@ -73,9 +73,9 @@ void Joueur(void* arg){
 			fini = VRAI ;
 			pthread_mutex_unlock(&mutex_Fin);
 
-			sprintf(mess, "Le joueur %2d à remporté la partie", compteur);
+			sprintf(message, "Le joueur %2d à remporté la partie", num_joueur);
 			pthread_mutex_lock(&mutex_Ecran);
-			ecran_message_pause_afficher(ecran, mess);
+			ecran_message_pause_afficher(ecran, message);
 			pthread_mutex_unlock(&mutex_Ecran);
 			pthread_exit(0) ; 
 
@@ -96,9 +96,9 @@ void Joueur(void* arg){
 		//On choisit la carte a remplacer
 		if( ( cr = tapis_cartes_choisir( &echange , tapis[num_joueur] , &ind_carte , tapis_central , &ind_carte_central) ) )
 		{
-			sprintf(mess, "Pb dans choix des cartes, code retour = %d\n", cr ) ;
+			sprintf(message, "Pb dans choix des cartes, code retour = %d\n", cr ) ;
 			pthread_mutex_lock(&mutex_Ecran);
-			ecran_message_pause_afficher(ecran, mess);
+			ecran_message_pause_afficher(ecran, message);
 			pthread_mutex_unlock(&mutex_Ecran);
 			erreur_afficher(cr) ; 
 			pthread_exit(0) ; 
@@ -112,17 +112,17 @@ void Joueur(void* arg){
 			pthread_mutex_lock(&mutex_Tapis);
 			if( ( cr = tapis_cartes_echanger( tapis[num_joueur] , ind_carte , tapis_central , ind_carte_central ) ) )
 			{
-				sprintf( mess, "Pb d'echange de cartes entre la carte %ld du tapis du joueur %d\n" , ind_carte , num_joueur ); 
+				sprintf( message, "Pb d'echange de cartes entre la carte %ld du tapis du joueur %d\n" , ind_carte , num_joueur ); 
 				pthread_mutex_lock(&mutex_Ecran);
-      			ecran_message_pause_afficher(ecran, mess);
+      			ecran_message_pause_afficher(ecran, message);
 				pthread_mutex_unlock(&mutex_Ecran);
 				erreur_afficher(cr) ; 
 				pthread_exit(0) ; 
 			}
-			sprintf(mess, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", i, ind_carte, ind_carte_central);
+			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", num_joueur, ind_carte, ind_carte_central);
 			pthread_mutex_lock(&mutex_Ecran);
-      		ecran_message_pause_afficher(ecran, mess);
-			ecran_carte_echanger(ecran, f_tapis_f_carte_lire(ecran_tapis_central_lire(ecran), ind_carte_central), f_tapis_f_carte_lire(ecran_tapis_joueur_lire(ecran, i), ind_carte);
+      		ecran_message_pause_afficher(ecran, message);
+	        ecran_cartes_echanger( ecran , f_tapis_f_carte_lire( ecran_tapis_central_lire( ecran ) , ind_carte_central ) , f_tapis_f_carte_lire( ecran_tapis_joueur_lire( ecran , num_joueur ) , ind_carte ) ) ;
 			ecran_afficher(ecran, tapis_central, tapis);
 			ecran_message_effacer(ecran);
 			pthread_mutex_unlock(&mutex_Ecran);
