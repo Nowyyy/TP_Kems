@@ -13,8 +13,10 @@
 
 typedef struct equipe_t{
 	int num_joueur;
-	int num_equipier;
+	int num_equipe;
 }equipe_s;
+
+int signaux[3];
 
 void arret( int sig )
 {
@@ -53,6 +55,8 @@ pthread_mutex_t mutex_CompteurJoueur = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t mutex_Ecran = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t mutex_Signaux = PTHREAD_MUTEX_INITIALIZER;
+
 
 
 //Fonction permettant de faire fonctionner les joueurs
@@ -62,27 +66,37 @@ void Joueur(void* arg){
   carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
 
-  int num_joueur =*((int*)arg);
+  equipe_s info = *((equipe_s*)arg);
+  int signal_lancé = 0;
 
 
 //On créé un décallage dans le lancement des threads
 	while(!fini)
 	{
 
-		/* Test arret */
-		if( tapis_carre( tapis[num_joueur] ) )
-		{
-				
+		pthread_mutex_lock(&mutex_Signaux);
+		if(signaux[info.num_equipe] == 1 && signal_lancé == 0){
+			pthread_mutex_unlock(&mutex_Signaux);
+			
 			pthread_mutex_lock(&mutex_Fin);
 			fini = VRAI ;
 			pthread_mutex_unlock(&mutex_Fin);
 
-			sprintf(message, "Le joueur %2d à remporté la partie", num_joueur);
+			sprintf(message, "%2D crie KEMS ! L'equipe %2d à remporté la partie", info.num_joueur+1, info.num_equipe+1);
 			pthread_mutex_lock(&mutex_Ecran);
 			ecran_message_pause_afficher(ecran, message);
 			pthread_mutex_unlock(&mutex_Ecran);
-			pthread_exit(0) ; 
+			pthread_exit(0) ;
+		}
 
+		/* Test arret */
+		if( tapis_carre( tapis[info.num_joueur] ) )
+		{
+			
+			pthread_mutex_lock(&mutex_Signaux);
+			signaux[info.num_equipe]=1;	
+			pthread_mutex_unlock(&mutex_Signaux);
+			signal_lancé =1;
 
 		}
 		
@@ -98,7 +112,7 @@ void Joueur(void* arg){
 		pthread_mutex_unlock(&mutex_CompteurJoueur);
 
 		//On choisit la carte a remplacer
-		if( ( cr = tapis_cartes_choisir( &echange , tapis[num_joueur] , &ind_carte , tapis_central , &ind_carte_central) ) )
+		if( ( cr = tapis_cartes_choisir( &echange , tapis[info.num_joueur] , &ind_carte , tapis_central , &ind_carte_central) ) )
 		{
 			sprintf(message, "Pb dans choix des cartes, code retour = %d\n", cr ) ;
 			pthread_mutex_lock(&mutex_Ecran);
@@ -114,19 +128,19 @@ void Joueur(void* arg){
 		{
 
 			pthread_mutex_lock(&mutex_Tapis);
-			if( ( cr = tapis_cartes_echanger( tapis[num_joueur] , ind_carte , tapis_central , ind_carte_central ) ) )
+			if( ( cr = tapis_cartes_echanger( tapis[info.num_joueur] , ind_carte , tapis_central , ind_carte_central ) ) )
 			{
-				sprintf( message, "Pb d'echange de cartes pour le joueur %d\n" , num_joueur ); 
+				sprintf( message, "Pb d'echange de cartes pour le joueur %d\n" , info.num_joueur ); 
 				pthread_mutex_lock(&mutex_Ecran);
       			ecran_message_pause_afficher(ecran, message);
 				pthread_mutex_unlock(&mutex_Ecran);
 				erreur_afficher(cr) ; 
 				pthread_exit(0) ; 
 			}
-			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", num_joueur, ind_carte+1, ind_carte_central+1);
+			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", info.num_joueur, ind_carte+1, ind_carte_central+1);
 			pthread_mutex_lock(&mutex_Ecran);
       		ecran_message_pause_afficher(ecran, message);
-	        ecran_cartes_echanger( ecran , f_tapis_f_carte_lire( ecran_tapis_central_lire( ecran ) , ind_carte_central ) , f_tapis_f_carte_lire( ecran_tapis_joueur_lire( ecran , num_joueur ) , ind_carte ) ) ;
+	        ecran_cartes_echanger( ecran , f_tapis_f_carte_lire( ecran_tapis_central_lire( ecran ) , ind_carte_central ) , f_tapis_f_carte_lire( ecran_tapis_joueur_lire( ecran , info.num_joueur ) , ind_carte ) ) ;
 			ecran_afficher(ecran, tapis_central, tapis);
 			ecran_message_effacer(ecran);
 			pthread_mutex_unlock(&mutex_Ecran);
@@ -284,13 +298,31 @@ main( int argc , char * argv[] )
 
 
 	//On créé les threads du tapis général et des joueurs
+
+	signaux[0]=0;
+	signaux[1]=0;
+	signaux[2]=0;
+
 	int id[]={0,1,2,3,4,5,6};
 	pthread_t joueurs[NbJoueurs+1];
 
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
 	for(i = 0; i<NbJoueurs; i++){ 
-		equipe_s equipe = {id[i], }; 
+		equipe_s equipe;
+		equipe.num_joueur = id[i];
+		if(i == 0 || i == 1){
+			equipe.num_equipe = 0; 
+
+		}
+		if(i == 2 || i == 3){
+			equipe.num_equipe = 1; 
+
+		}
+		if(i == 4 || i == 5){
+			equipe.num_equipe = 2; 
+
+		}
 		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&equipe);
 	}
 
