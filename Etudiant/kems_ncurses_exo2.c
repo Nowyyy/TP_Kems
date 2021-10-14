@@ -58,6 +58,7 @@ void Joueur(void* arg){
   carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
 
+//On récupère les données passées en paramètres en les convertissant.
   int num_joueur =*((int*)arg);
 
 
@@ -119,6 +120,8 @@ void Joueur(void* arg){
 				erreur_afficher(cr) ; 
 				pthread_exit(0) ; 
 			}
+			
+			//On fait jouer le joueur et on l'affiche a l'écran
 			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", num_joueur, ind_carte+1, ind_carte_central+1);
 			pthread_mutex_lock(&mutex_Ecran);
       		ecran_message_pause_afficher(ecran, message);
@@ -154,6 +157,7 @@ void Tapis()
 	   	 * Pas un seul echange des joueur 
 	   	 * --> redistribution du tapis central 
 	   	 */
+	sleep(1);
 
     pthread_mutex_lock(&mutex_Ecran);
 	pthread_mutex_lock(&mutex_Tapis);

@@ -11,11 +11,16 @@
 #include <pthread.h>
 
 
+//Structure contenant les informations passées en paramètres de la fonction joueur.
+//Num joueur = Le numéro du joueur
+//Num équipe = le numéro de l'équipe
 typedef struct equipe_t{
 	int num_joueur;
 	int num_equipe;
 }equipe_s;
 
+
+//Tableau contenant les signaux permettant de dire qu'un joueur à un carré
 int signaux[3];
 
 void arret( int sig )
@@ -35,6 +40,7 @@ err_t cr = OK ;
 booleen_t fini = FAUX;
 int NbJoueurs = 0;
 
+//Variables permettant d'afficher le jeu avec l'écran
 char message[256];
 ecran_t * ecran = ECRAN_NULL;
 
@@ -66,6 +72,7 @@ void Joueur(void* arg){
   	carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
 
+//On récupère les données passées en paramètres en les convertissant.
   equipe_s info = *((equipe_s*)arg);
   int signal_lance = 0;
 
@@ -74,9 +81,9 @@ void Joueur(void* arg){
 	while(!fini)
 	{
 
-		//pthread_mutex_lock(&mutex_Signaux);
+		//Si le signal de Kems est donné et que ce n'est pas ce joueur qui l'a lancé mais bien son cooéquipier
+		//Alors on fait dire kems et on termine la partie
 		if(signaux[info.num_equipe] == 1 && signal_lance == 0){
-			//pthread_mutex_unlock(&mutex_Signaux);
 			
 			pthread_mutex_lock(&mutex_Fin);
 			fini = VRAI ;
@@ -89,7 +96,7 @@ void Joueur(void* arg){
 			pthread_exit(0) ;
 		}
 
-		/* Test arret */
+		//Si un joueur a un carré alors on lance un signal a son équipier
 		if( tapis_carre( tapis[info.num_joueur] ) )
 		{
 			
@@ -120,7 +127,7 @@ void Joueur(void* arg){
 			pthread_mutex_unlock(&mutex_Ecran);
 			erreur_afficher(cr) ; 
 			pthread_exit(0) ; 
-		}
+		}		
 
 
 		//Echange de carte si mouvement valable
@@ -137,6 +144,8 @@ void Joueur(void* arg){
 				erreur_afficher(cr) ; 
 				pthread_exit(0) ; 
 			}
+
+			//On fait jouer le joueur et on l'affiche a l'écran
 			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", info.num_joueur, ind_carte+1, ind_carte_central+1);
 			pthread_mutex_lock(&mutex_Ecran);
       		ecran_message_pause_afficher(ecran, message);
@@ -147,6 +156,7 @@ void Joueur(void* arg){
 
 		}
 		pthread_mutex_unlock(&mutex_Tapis);
+
 
 		
 		//On compte le nombre de joueurs en train de jouer
@@ -172,6 +182,8 @@ void Tapis()
 	   	 * Pas un seul echange des joueur 
 	   	 * --> redistribution du tapis central 
 	   	 */
+
+	sleep(1);
 
     pthread_mutex_lock(&mutex_Ecran);
 	pthread_mutex_lock(&mutex_Tapis);
@@ -223,6 +235,7 @@ main( int argc , char * argv[] )
 
 	NbJoueurs  = atoi( argv[1] ) ;
 
+	//On fait en sorte que la partie ne puisse être jouée qu'à 4 ou 6 joueurs
 	if(NbJoueurs != 4 && NbJoueurs != 6 ){
 		printf("Il ne peut y avoir que 4 ou 6 joueurs\n");
 		printf("\n");
@@ -296,17 +309,18 @@ main( int argc , char * argv[] )
 	ecran_message_afficher(ecran, "Début de partie");
   
 
-
-	//On créé les threads du tapis général et des joueurs
-
+	//Creation des signaux de fin de partie
 	signaux[0]=0;
 	signaux[1]=0;
 	signaux[2]=0;
 
+
+	//On créé les threads du tapis général et des joueurs
 	pthread_t joueurs[NbJoueurs+1];
 
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
+	//On initialise toutes les structures des joueurs
 	for(i = 0; i<NbJoueurs; i++){ 
 		equipe_s equipes[6];
 		equipes[0].num_joueur = 0;
@@ -330,13 +344,12 @@ main( int argc , char * argv[] )
 		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&equipes[i]);
 	}
 
+
 	//On attend la fin de l'exécution de tous les threads
 	for(i = 0; i<NbJoueurs+1; i++){ 
 		pthread_join(joueurs[i], NULL);
 	}
 	
-
-
 
 	//Destruction de l'écran
 	ecran_detruire(&ecran);
