@@ -172,7 +172,7 @@ void Joueur(void* arg){
 	}
 }
 
-//Fonction permettant de faire fonctionner les joueurs
+//Fonction permettant de faire fonctionner le tapis central
 void Tapis()
 {
 

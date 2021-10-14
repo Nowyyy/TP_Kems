@@ -149,13 +149,15 @@ void Joueur(int num_joueur){
 	}
 }
 
-//Fonction permettant de faire fonctionner les joueurs
+//Fonction permettant de faire fonctionner le tapis central
 void Tapis()
 {
 	pthread_mutex_lock(&mutex_Fin);
 	while(!fini)
 	{
 		pthread_mutex_unlock(&mutex_Fin);
+
+		sleep(1);
 		/* Affichage Central */
      	printf( "Tapis central \n" ) ;
       	tapis_stdout_afficher( tapis_central ) ;
