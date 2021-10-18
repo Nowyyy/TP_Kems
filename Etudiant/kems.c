@@ -31,17 +31,17 @@ pthread_mutex_t mutex_Carte2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_Carte3 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_Carte4 = PTHREAD_MUTEX_INITIALIZER;
 
-pthread_mutex_t mutex_TapisGlobal = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_CompteurJoueur = PTHREAD_MUTEX_INITIALIZER;
 
 
 //Fonction permettant de faire fonctionner les joueurs
-void Joueur(int num_joueur){
+void Joueur(void* arg){
 
 	carte_id_t ind_carte = -1 ;
     carte_id_t ind_carte_central = -1 ;
 	booleen_t echange = FAUX;
     fini = FAUX;
+
+	int num_joueur =*((int*)arg);
 
 
 //On créé un décallage dans le lancement des threads
@@ -64,24 +64,18 @@ void Joueur(int num_joueur){
 			pthread_mutex_unlock(&mutex_Fin);
 
 			printf( "*----------------------*\n") ; 
-			printf( "* Le joueur %2d a gagne *\n" , num_joueur ) ;
+			printf( "* Le joueur %2d a gagne *\n" , num_joueur +1 ) ;
 			printf( "*----------------------*\n") ; 
 			pthread_exit(0);  /* Sort de la boucle des joueurs */
 		}
 		
-		//On compte le nombre de joueurs en train de jouer
-		//Si un seul joueur joue, on bloque le tapis pour lui
-		pthread_mutex_lock(&mutex_CompteurJoueur);
-		NbJoueurs++;
-		if(NbJoueurs == 1)
-		{
-			pthread_mutex_lock(&mutex_Tapis);
-		}
 		
-		pthread_mutex_unlock(&mutex_CompteurJoueur);
+		pthread_mutex_lock(&mutex_Tapis);
+
+		
 
 		//On choisit la carte a remplacer
-		pthread_mutex_lock(&mutex_TapisGlobal);
+
 		if( ( cr = tapis_cartes_choisir( &echange , tapis[num_joueur] , &ind_carte , tapis_central , &ind_carte_central) ) )
 		{
 			printf( "Pb dans choix des cartes, code retour = %d\n", cr ) ;
@@ -89,7 +83,6 @@ void Joueur(int num_joueur){
 			pthread_exit(0) ; 
 		}
 
-		pthread_mutex_unlock(&mutex_TapisGlobal);
 
 		//Echange de carte si mouvement valable
 		if( echange ) 
@@ -138,14 +131,8 @@ void Joueur(int num_joueur){
 		
 		//On compte le nombre de joueurs en train de jouer
 		//Si il n'y a plus de joueur qui joue alors on delocke le tapis
-		pthread_mutex_lock(&mutex_CompteurJoueur);
-		NbJoueurs--;
-		if(NbJoueurs == 0)
-		{
-			pthread_mutex_unlock(&mutex_Tapis);
-		}
-		
-		pthread_mutex_unlock(&mutex_CompteurJoueur);
+		pthread_mutex_unlock(&mutex_Tapis);
+
 	}
 }
 
@@ -279,10 +266,13 @@ main( int argc , char * argv[] )
 	//On créé les threads du tapis général et des joueurs
 	pthread_t joueurs[NbJoueurs+1];
 
+	int id[]={0,1,2,3,4,5,6};
+
+
 	pthread_create(&joueurs[NbJoueurs], NULL, (void *)Tapis, (void *)NULL);
 
 	for(i = 0; i<NbJoueurs; i++){ 
-		pthread_create(&joueurs[i], NULL, (void *)Joueur, i);
+		pthread_create(&joueurs[i], NULL, (void *)Joueur, (void*)&id[i]);
 	}
 
 	//On attend la fin de l'exécution de tous les threads
@@ -319,8 +309,7 @@ main( int argc , char * argv[] )
 	pthread_mutex_destroy(&mutex_Carte4);
 	pthread_mutex_destroy(&mutex_Tapis);
 	pthread_mutex_destroy(&mutex_Fin);
-	pthread_mutex_destroy(&mutex_TapisGlobal);
-	pthread_mutex_destroy(&mutex_CompteurJoueur);
+
 	printf("OK\n") ;
 
  

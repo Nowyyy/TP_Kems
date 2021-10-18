@@ -23,7 +23,7 @@ fich_obj_kems_ncurses=kems_ncurses.o \
 BIN = kems kems_ncurses
 
 kems : $(fich_obj_kems) 
-	$(CCLNK) $(CFLAGS)  $(fich_obj_kems) -o kems -ltda -L$(DirLibTDA) $(LIB_M) $(LIB_PTHREAD) $(MACRO_PTHREAD)
+	$(CCLNK) $(CFLAGS) $(fich_obj_kems) -o kems -ltda -L$(DirLibTDA) $(LIB_M) $(LIB_PTHREAD) $(MACRO_PTHREAD)
 
 kems.o : kems.c $(DirJeu)/paquet.h $(DirJeu)/tapis.h 
 	$(CCOBJ) $(CFLAGS)  kems.c -o kems.o -I./ -I$(DirCommun) -I$(DirIncTDA) -I$(DirJeu)

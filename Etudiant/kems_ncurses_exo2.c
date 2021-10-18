@@ -28,6 +28,8 @@ err_t cr = OK ;
 	
 booleen_t fini = FAUX;
 int NbJoueurs = 0;
+int joueurJouant = 0;
+
 
 char message[256];
 ecran_t * ecran = ECRAN_NULL;
@@ -86,8 +88,8 @@ void Joueur(void* arg){
 		//On compte le nombre de joueurs en train de jouer
 		//Si un seul joueur joue, on bloque le tapis pour lui
 		pthread_mutex_lock(&mutex_CompteurJoueur);
-		NbJoueurs++;
-		if(NbJoueurs == 1)
+		joueurJouant++;
+		if(joueurJouant == 1)
 		{
 			pthread_mutex_lock(&mutex_Tapis);
 		}
@@ -137,8 +139,8 @@ void Joueur(void* arg){
 		//On compte le nombre de joueurs en train de jouer
 		//Si il n'y a plus de joueur qui joue alors on delocke le tapis
 		pthread_mutex_lock(&mutex_CompteurJoueur);
-		NbJoueurs--;
-		if(NbJoueurs == 0)
+		joueurJouant--;
+		if(joueurJouant == 0)
 		{
 			pthread_mutex_unlock(&mutex_Tapis);
 		}
