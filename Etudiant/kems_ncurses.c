@@ -40,6 +40,7 @@ err_t cr = OK ;
 booleen_t fini = FAUX;
 int NbJoueurs = 0;
 int joueurJouant = 0;
+int tourSansAction = 0;
 
 //Variables permettant d'afficher le jeu avec l'écran
 char message[256];
@@ -90,11 +91,16 @@ void Joueur(void* arg){
 			fini = VRAI ;
 			pthread_mutex_unlock(&mutex_Fin);
 
-			sprintf(message, "Le joueur %2d crie KEMS ! L'equipe %2d à remporté la partie", info.num_joueur+1, info.num_equipe+1);
+			sprintf(message, "Le joueur %2d crie KEMS ! L'equipe %2d à remporté la partie", info.num_joueur, info.num_equipe);
 			pthread_mutex_lock(&mutex_Ecran);
+			ecran_afficher(ecran, tapis_central, tapis);
+
 			ecran_message_pause_afficher(ecran, message);
+
+			pause();
 			pthread_mutex_unlock(&mutex_Ecran);
-			pthread_exit(0) ;
+			
+			exit(0) ;
 		}
 
 		//Si un joueur a un carré alors on lance un signal a son équipier
@@ -147,10 +153,13 @@ void Joueur(void* arg){
 			}
 
 			//On fait jouer le joueur et on l'affiche a l'écran
-			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", info.num_joueur, ind_carte+1, ind_carte_central+1);
 			pthread_mutex_lock(&mutex_Ecran);
+			sprintf(message, "Joueur %i : Echange carte %ld avec carte %ld du tapis central", info.num_joueur, ind_carte+1, ind_carte_central+1);
       		ecran_message_pause_afficher(ecran, message);
+			//pthread_mutex_unlock(&mutex_Ecran);
+
 	        ecran_cartes_echanger( ecran , f_tapis_f_carte_lire( ecran_tapis_central_lire( ecran ) , ind_carte_central ) , f_tapis_f_carte_lire( ecran_tapis_joueur_lire( ecran , info.num_joueur ) , ind_carte ) ) ;
+			//pthread_mutex_lock(&mutex_Ecran);
 			ecran_afficher(ecran, tapis_central, tapis);
 			ecran_message_effacer(ecran);
 			pthread_mutex_unlock(&mutex_Ecran);
@@ -168,7 +177,15 @@ void Joueur(void* arg){
 		{
 			pthread_mutex_unlock(&mutex_Tapis);
 		}
-		
+
+
+		//On met a jour le nombre de tours ou des joueurs n'ont pas jouer
+		if(echange){
+			tourSansAction = 0;
+		}
+		else{
+			tourSansAction++;
+		}
 		pthread_mutex_unlock(&mutex_CompteurJoueur);
 	}
 }
@@ -186,33 +203,36 @@ void Tapis()
 
 	sleep(1);
 
-    pthread_mutex_lock(&mutex_Ecran);
-	pthread_mutex_lock(&mutex_Tapis);
+	//Si un certain nombre de tours de joueurs n'ont pas eu d'action, alors on redistribue le plateau
+	if(tourSansAction>6){
+		pthread_mutex_lock(&mutex_Ecran);
+		pthread_mutex_lock(&mutex_Tapis);
 
-      ecran_message_pause_afficher(ecran, "Pas d'échange = Redistribution du tapis central");
+		ecran_message_pause_afficher(ecran, "Pas d'échange = Redistribution du tapis central");
 
-	  	for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
-	    {
-	      	if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
-			    {
-				  printf("Problème de retrait de carte sur le tapis central");
-		  		  erreur_afficher(cr) ; 
-		  		  exit(-1) ; 
-			    }
-	  
-	    	if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
-			  {
-				  printf("Problème de distribution de carte sur le tapis central");
-				  erreur_afficher(cr) ; 
-				  exit(-1) ; 
-			  }
-	    }
+			for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
+			{
+				if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
+					{
+					printf("Problème de retrait de carte sur le tapis central");
+					erreur_afficher(cr) ; 
+					exit(-1) ; 
+					}
+		
+				if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
+				{
+					printf("Problème de distribution de carte sur le tapis central");
+					erreur_afficher(cr) ; 
+					exit(-1) ; 
+				}
+			}
 
-    ecran_afficher(ecran, tapis_central, tapis);
-	ecran_message_effacer(ecran);
+		ecran_afficher(ecran, tapis_central, tapis);
+		//ecran_message_effacer(ecran);
 
 		pthread_mutex_unlock(&mutex_Tapis);
-    pthread_mutex_unlock(&mutex_Ecran);
+		pthread_mutex_unlock(&mutex_Ecran);
+	}
       
 	}
 }

@@ -18,6 +18,7 @@ err_t cr = OK ;
 	
 booleen_t fini = FAUX;
 int NbJoueurs = 0;
+int tourSansAction = 0;
 
 
 // Liste de tous les Mutex
@@ -66,7 +67,7 @@ void Joueur(void* arg){
 			printf( "*----------------------*\n") ; 
 			printf( "* Le joueur %2d a gagne *\n" , num_joueur +1 ) ;
 			printf( "*----------------------*\n") ; 
-			pthread_exit(0);  /* Sort de la boucle des joueurs */
+			exit(0);  /* Sort de la boucle des joueurs */
 		}
 		
 		
@@ -129,8 +130,16 @@ void Joueur(void* arg){
 
 		}
 		
-		//On compte le nombre de joueurs en train de jouer
-		//Si il n'y a plus de joueur qui joue alors on delocke le tapis
+		
+		//On met a jour le nombre de tours ou des joueurs n'ont pas jouer
+
+		if(echange){
+			tourSansAction = 0;
+		}
+		else{
+			tourSansAction++;
+		}
+		
 		pthread_mutex_unlock(&mutex_Tapis);
 
 	}
@@ -152,34 +161,32 @@ void Tapis()
 
 
 		
-	  	/* 
-	   	 * Pas un seul echange des joueur 
-	   	 * --> redistribution du tapis central 
-	   	 */
+	//Si un certain nombre de tours de joueurs n'ont pas eu d'action, alors on redistribue le plateau
 
-		pthread_mutex_lock(&mutex_Tapis);
+		if(tourSansAction>6){
+			pthread_mutex_lock(&mutex_Tapis);
 
-	  	printf( "Redistribution tapis central\n") ; 
+			printf( "Redistribution tapis central\n") ; 
 
-	  	for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
-	    {
-	      	if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
+			for( c=0 ; c<TAPIS_NB_CARTES ; c++ )
 			{
-		  		printf( "Pb dans retrait d'une carte du tapis central\n" ); 
-		  		erreur_afficher(cr) ; 
-		  		exit(-1) ; 
+				if( ( cr = tapis_carte_retirer( tapis_central , c , paquet ) ) )
+				{
+					printf( "Pb dans retrait d'une carte du tapis central\n" ); 
+					erreur_afficher(cr) ; 
+					exit(-1) ; 
+				}
+		
+				if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
+				{
+					printf( "Pb dans distribution d'une carte pour le tapis central\n" ); 
+					erreur_afficher(cr) ; 
+					exit(-1) ; 
+				}
 			}
-	  
-	    	if( ( cr = tapis_carte_distribuer( tapis_central , c , paquet ) ) )
-			{
-				printf( "Pb dans distribution d'une carte pour le tapis central\n" ); 
-				erreur_afficher(cr) ; 
-				exit(-1) ; 
-			}
-	    }
 
-		pthread_mutex_unlock(&mutex_Tapis);
-      
+			pthread_mutex_unlock(&mutex_Tapis);
+		}
 	}
 }
 
